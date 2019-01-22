@@ -25,6 +25,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.TimeUnit
+import java.util.stream.Collectors
 
 @SpringBootApplication
 class Application
@@ -47,7 +48,10 @@ class IndexController {
             Files.newDirectoryStream(sslCertDir).use {
                 it.filter { fileName -> fileName.toString().endsWith(".pem") }.forEach { fileName ->
                     val sslCertFile = sslCertDir.resolve(fileName)
-                    sslCerts[sslCertFile.toAbsolutePath()] = readSslCertificate(sslCertFile)
+                    val certs = readSslCertificates(sslCertFile)
+                    if (certs != null) {
+                        sslCerts[sslCertFile.toAbsolutePath()] = certs
+                    }
                 }
             }
             if (sslCerts.isEmpty()) {
@@ -58,16 +62,45 @@ class IndexController {
 
         val sslInstanceCertFile = Paths.get("/etc/cf-instance-credentials/instance.crt")
         if (Files.exists(sslInstanceCertFile)) {
-            model["instanceCertificate"] = readSslCertificate(sslInstanceCertFile)
-            model["instanceGuid"] = System.getenv("CF_INSTANCE_GUID")
-            model["instanceIndex"] = System.getenv("CF_INSTANCE_INDEX")
+            val certs = readSslCertificates(sslInstanceCertFile)
+            if (certs != null) {
+                model["instanceCertificate"] = certs
+                model["instanceGuid"] = System.getenv("CF_INSTANCE_GUID")
+                model["instanceIndex"] = System.getenv("CF_INSTANCE_INDEX")
+            }
         }
 
         return "index"
     }
 
-    private fun readSslCertificate(file: Path): CharSequence {
-        logger.info("Reading SSL certificate: {}", file)
+    private fun readSslCertificates(file: Path): CharSequence? {
+        logger.info("Reading SSL certificates: {}", file)
+        val buf = StringBuilder(512)
+
+        val sourceLines = Files.lines(file).collect(Collectors.toList())
+        val singleCertLines = mutableListOf<String>()
+        for (line in sourceLines) {
+            singleCertLines.add(line)
+            if (line.contains("END CERTIFICATE")) {
+                val tmp = Files.createTempFile("certificate-", ".crt")
+                try {
+                    Files.write(tmp, singleCertLines)
+                    val singleCert = readSingleSslCertificate(tmp)
+                    if (buf.isNotEmpty()) {
+                        buf.append("\n")
+                    }
+                    buf.append(singleCert)
+                    singleCertLines.clear()
+                } finally {
+                    Files.delete(tmp)
+                }
+            }
+        }
+
+        return if (buf.isEmpty()) null else buf
+    }
+
+    private fun readSingleSslCertificate(file: Path): CharSequence {
         val cmd = listOf("openssl", "x509", "-in", file.toAbsolutePath().toString(), "-text", "-noout")
         return ProcessBuilder(cmd)
                 .redirectOutput(ProcessBuilder.Redirect.PIPE)
