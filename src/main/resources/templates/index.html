@@ -87,15 +87,13 @@ Certificate:
         </p>
     </div>
 
-    <h2>Trusted Certificates</h2>
-    <div class="no-certificates-found" th:if="${#lists.isEmpty(trustedCertificates)}">
-        <p>No trusted certificates found</p>
-    </div>
+    <div th:unless="${trustedCertificates.isEmpty()}">
+        <h2>Trusted Certificates</h2>
 
-    <div class="certificate" th:each="item : ${trustedCertificates}">
-        <h3 th:text="${item.key.fileName}">My Certificate.pem</h3>
-        <p>
-        <pre class="certificate-content" th:text="${item.value}">
+        <div class="certificate" th:each="item : ${trustedCertificates}">
+            <h3 th:text="${item.key.fileName}">My Certificate.pem</h3>
+            <p>
+            <pre class="certificate-content" th:text="${item.value}">
 Certificate:
     Data:
         Version: 3 (0x2)
@@ -204,7 +202,8 @@ Certificate:
          61:37:c9:c2:58:80:1b:a0:97:a1:fc:59:8d:e9:11:f6:d1:0f:
          4b:55:34:46:2a:8b:86:3b
 </pre>
-        </p>
+            </p>
+        </div>
     </div>
 
     <footer>
