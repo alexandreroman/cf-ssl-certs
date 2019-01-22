@@ -1,0 +1,5 @@
+---
+applications:
+  - name: cf-ssl-certs
+    path: target/cf-ssl-certs.jar
+    random-route: true

@@ -1,0 +1,68 @@
+body {
+    font-family: 'Noto Sans', sans-serif;
+    font-size: 14px;
+    background: #222f38;
+    color: white;
+}
+
+h1 {
+    font-weight: bold;
+    font-size: 2em;
+    color: #7EB050;
+}
+
+h2, h3 {
+    color: gray;
+}
+
+#container {
+    text-align: left;
+    margin: 5em auto;
+    color: black;
+    width: 80%;
+    max-width: 900px;
+}
+
+.certificate {
+    background: white;
+    border: 1px solid darkgray;
+    border-radius: 4px;
+    -moz-border-radius: 4px;
+    padding: 0.5em;
+    margin: 1em 0;
+}
+
+.certificate-content {
+    overflow: scroll;
+}
+
+.no-certificates-found {
+    color: red;
+    background: darkslategray;
+    border: 1px solid black;
+    border-radius: 4px;
+    -moz-border-radius: 4px;
+    padding: 1em;
+}
+
+footer {
+    margin: 2em 0;
+    color: gray;
+    text-align: right;
+}
+
+@media (max-width: 800px) {
+    body {
+        font-size: 14px;
+    }
+
+    #container {
+        width: 90%;
+        max-width: fit-content;
+    }
+
+    .certificate {
+        margin: 0;
+        font-size: 80%;
+    }
+}
