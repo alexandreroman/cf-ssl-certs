@@ -41,32 +41,38 @@ class IndexController {
     @GetMapping("/")
     fun index(model: MutableMap<String, Any>): String {
         val sslCerts = sortedMapOf<Path, CharSequence>()
-        val sslCertDir = Paths.get("/etc/ssl/certs")
-        if (!Files.isDirectory(sslCertDir)) {
-            logger.warn("SSL certificates directory not found")
-        } else {
-            Files.newDirectoryStream(sslCertDir).use {
-                it.filter { fileName -> fileName.toString().endsWith(".pem") }.forEach { fileName ->
-                    val sslCertFile = sslCertDir.resolve(fileName)
-                    val certs = readSslCertificates(sslCertFile)
-                    if (certs != null) {
-                        sslCerts[sslCertFile.toAbsolutePath()] = certs
+        val sslCertDirPath = System.getenv("CF_SYSTEM_CERT_PATH")
+        if (sslCertDirPath != null) {
+            val sslCertDir = Paths.get(sslCertDirPath)
+            if (!Files.isDirectory(sslCertDir)) {
+                logger.warn("SSL certificates directory not found")
+            } else {
+                Files.newDirectoryStream(sslCertDir).use {
+                    it.filter { fileName -> fileName.toString().endsWith(".crt") }.forEach { fileName ->
+                        val sslCertFile = sslCertDir.resolve(fileName)
+                        val certs = readSslCertificates(sslCertFile)
+                        if (certs != null) {
+                            sslCerts[sslCertFile.toAbsolutePath()] = certs
+                        }
                     }
                 }
-            }
-            if (sslCerts.isEmpty()) {
-                logger.warn("No SSL certificates found")
+                if (sslCerts.isEmpty()) {
+                    logger.warn("No SSL certificates found")
+                }
             }
         }
         model["trustedCertificates"] = sslCerts
 
-        val sslInstanceCertFile = Paths.get("/etc/cf-instance-credentials/instance.crt")
-        if (Files.exists(sslInstanceCertFile)) {
-            val certs = readSslCertificates(sslInstanceCertFile)
-            if (certs != null) {
-                model["instanceCertificate"] = certs
-                model["instanceGuid"] = System.getenv("CF_INSTANCE_GUID")
-                model["instanceIndex"] = System.getenv("CF_INSTANCE_INDEX")
+        val sslInstanceCertFilePath = System.getenv("CF_INSTANCE_CERT")
+        if (sslInstanceCertFilePath != null) {
+            val sslInstanceCertFile = Paths.get(sslInstanceCertFilePath)
+            if (Files.exists(sslInstanceCertFile)) {
+                val certs = readSslCertificates(sslInstanceCertFile)
+                if (certs != null) {
+                    model["instanceCertificate"] = certs
+                    model["instanceGuid"] = System.getenv("CF_INSTANCE_GUID")
+                    model["instanceIndex"] = System.getenv("CF_INSTANCE_INDEX")
+                }
             }
         }
 
